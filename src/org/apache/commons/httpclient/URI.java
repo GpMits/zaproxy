@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.BitSet;
 import java.util.Hashtable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.net.URLCodec;
@@ -1897,8 +1899,7 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
      */
     protected void parseUriReference(String original, boolean escaped)
         throws URIException {
-
-        // validate and contruct the URI character sequence
+        // validate and construct the URI character sequence
         if (original == null) {
             throw new URIException("URI-Reference required");
         }
@@ -1946,6 +1947,17 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
             isStartedFromPath = true;
         }
 
+        Pattern p = Pattern.compile(":(\\d+)");
+        Matcher m = p.matcher(tmp);
+        boolean hasPort = m.find();
+
+        int countChars = 0;
+        for (int i = 0; i < tmp.length(); i++) {
+            if (tmp.charAt(i) == ':') {
+                countChars++;
+            }
+        }
+        boolean hasDoubleTwoDots = (countChars == 2);
         /*
          * <p><blockquote><pre>
          *     @@@@@@@@
@@ -1953,7 +1965,7 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
          * </pre></blockquote><p>
          */
         int at = indexFirstOf(tmp, isStartedFromPath ? "/?#" : ":/?#", from);
-        if (at == -1) { 
+        if (at == -1 || (hasPort && !hasDoubleTwoDots)) {
             at = 0;
         }
 
@@ -1985,11 +1997,11 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
          */
         // Reset flags
         _is_net_path = _is_abs_path = _is_rel_path = _is_hier_part = false;
-        if (0 <= at && at < length && tmp.charAt(at) == '/') {
+        if (0 <= at && at < length) {
             // Set flag
             _is_hier_part = true;
-            if (at + 2 < length && tmp.charAt(at + 1) == '/' 
-                && !isStartedFromPath) {
+            if (at + 2 < length && tmp.charAt(at + 1) == '/' && tmp.charAt(at) == '/'
+                    && !isStartedFromPath) {
                 // the temporary index to start the search from
                 int next = indexFirstOf(tmp, "/?#", at + 2);
                 if (next == -1) {
@@ -2000,6 +2012,14 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
                 from = at = next;
                 // Set flag
                 _is_net_path = true;
+            } else if (!isStartedFromPath){
+                int next = indexFirstOf(tmp, "/?#", at);
+                if (next == -1) {
+                    next = (tmp.substring(at).length() == 0) ? at
+                            : tmp.length();
+                }
+                parseAuthority(tmp.substring(at, next), escaped);
+                from = at = next;
             }
             if (from == at) {
                 // Set flag
