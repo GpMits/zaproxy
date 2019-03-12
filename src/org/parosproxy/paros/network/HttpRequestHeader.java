@@ -443,6 +443,7 @@ public class HttpRequestHeader extends HttpHeader {
         mMethod = matcher.group(1);
         String sUri = matcher.group(2);
         mVersion = matcher.group(3);
+
         if (!mVersion.equalsIgnoreCase(HTTP09) && !mVersion.equalsIgnoreCase(HTTP10) && !mVersion.equalsIgnoreCase(HTTP11)) {
             mMalformedHeader = true;
             throw new HttpMalformedHeaderException("Unexpected version: " + mVersion);
@@ -607,6 +608,7 @@ public class HttpRequestHeader extends HttpHeader {
 
     public static URI parseURI(String sUri) throws URIException {
         URI uri;
+
         int len = sUri.length();
         StringBuilder sb = new StringBuilder(len);
         char[] charray = new char[1];

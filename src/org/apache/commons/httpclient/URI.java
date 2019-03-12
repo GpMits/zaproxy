@@ -1899,6 +1899,7 @@ public class URI implements Cloneable, Comparable<Object>, Serializable {
      */
     protected void parseUriReference(String original, boolean escaped)
         throws URIException {
+
         // validate and construct the URI character sequence
         if (original == null) {
             throw new URIException("URI-Reference required");
